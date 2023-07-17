@@ -3,7 +3,6 @@ const app = express()
 const dotenv = require('dotenv')
 const morgan = require('morgan')
 const helmet = require('helmet')
-const {MongoClient} = require('mongodb');
 const mongoose = require('mongoose')
 const userRoute = require('./routers/users')
 const authRoute = require('./routers/auth')

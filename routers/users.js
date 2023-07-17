@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 const router = require('express').Router()
 const bodyParser = require('body-parser').json();
 const Post = require('../models/Post')
+const { authenticateToken } = require('../middlewares/authMiddleware')
 
 
 router.get('/',(req,res)=>{
@@ -11,8 +12,8 @@ router.get('/',(req,res)=>{
 
 // Update User
 
-router.put('/:id', bodyParser, async (req,res) => {
-    if(req.body.id === req.params.id || req?.body?.isAdmin){
+router.put('/:id', bodyParser,authenticateToken, async (req,res) => {
+    if(req.user._id == req.params.id || req?.user?.isAdmin){
         if(req.body.password){
             try {
                 const salt = await bcrypt.genSalt(10)
@@ -39,10 +40,10 @@ router.put('/:id', bodyParser, async (req,res) => {
     }
 } )
 // Delete User
-router.delete('/:id', bodyParser, async (req,res) => {
-    if(req.body.id === req.params.id || req?.body?.isAdmin){
+router.delete('/:id', bodyParser,authenticateToken,async (req,res) => {
+    if(req.user._id == req.params.id || req.user.isAdmin){
         try {
-            const user = await User.findByIdAndDelete(req.body.id)
+            const user = await User.findByIdAndDelete(req.params.id)
             res.status(200).json("Account deleted successfully")
         }
         catch(error){
@@ -54,9 +55,9 @@ router.delete('/:id', bodyParser, async (req,res) => {
         return res.status(403).json(" You can only delete your account")
     }
 } )
-// Get a User
 
-router.get('/:id', bodyParser, async(req,res) => {
+// Get a User
+router.get('/:id', bodyParser,authenticateToken,async(req,res) => {
     try{
         const user = await User.findById(req.params.id)
         const {password, updatedAt,isAdmin, ...other} = user._doc
@@ -70,15 +71,15 @@ router.get('/:id', bodyParser, async(req,res) => {
         res.status(500).json(error)
     }
 })
-// Follow a User
 
-router.put('/:id/follow', bodyParser, async(req,res)=> {
-    if(req.body.id !== req.params.id){
+// Follow a User
+router.put('/:id/follow', bodyParser,authenticateToken,async(req,res)=> {
+    if(req.user._id !== req.params.id){
         try{
                 const user = await User.findById(req.params.id)
-                const currentUser = await User.findById(req.body.id)
-            if(!user.followers.includes(req.body.id)){
-                await user.updateOne({$push:{followers:req.body.id}})
+                const currentUser = await User.findById(req.user._id)
+            if(!user.followers.includes(req.user._id)){
+                await user.updateOne({$push:{followers:req.user._id}})
                 await currentUser.updateOne({$push:{followings:req.params.id}})
             }else{
                 res.status(403).json("This account is already followed")
@@ -89,19 +90,19 @@ router.put('/:id/follow', bodyParser, async(req,res)=> {
             console.log("USER FOLLOW ERROR", error)
             res.status(500).json(error)
         }
-    }
+    } 
     else{ 
         res.status(403).json("You can't follow yourself")
     }
 } ) 
 // Unfollow a User
-router.put('/:id/unfollow', bodyParser, async(req,res)=> {
-    if(req.body.id !== req.params.id){
+router.put('/:id/unfollow', bodyParser,authenticateToken,async(req,res)=> {
+    if(req.user._id !== req.params.id){
         try{
                 const user = await User.findById(req.params.id)
-                const currentUser = await User.findById(req.body.id)
-            if(user.followers.includes(req.body.id)){
-                await user.updateOne({$pull:{followers:req.body.id}})
+                const currentUser = await User.findById(req.user._id)
+            if(user.followers.includes(req.user._id)){
+                await user.updateOne({$pull:{followers:req.user._id}})
                 await currentUser.updateOne({$pull:{followings:req.params.id}})
             }else{
                 res.status(403).json("This account is not followed") 
@@ -119,7 +120,7 @@ router.put('/:id/unfollow', bodyParser, async(req,res)=> {
 } )
 
 // Get Followers
-    router.get('/:id/followers',bodyParser, async(req,res)=> {
+    router.get('/:id/followers',bodyParser,async(req,res)=> {
         try{
             const user = await User.findById(req.params.id)
             const followersUsernames = []

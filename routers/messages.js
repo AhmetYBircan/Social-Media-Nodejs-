@@ -2,14 +2,16 @@ const router = require('express').Router()
 const bodyParser = require('body-parser').json();
 const Message = require('../models/Message')
 const User = require('../models/user');
+const { authenticateToken } = require('../middlewares/authMiddleware')
 
 
 // Send Message
-router.post('/newMessage/:receiverId', bodyParser, async(req, res)=> {
+router.post('/newMessage/:receiverId', bodyParser,authenticateToken, async(req, res)=> {
     try{
         // get receiver ınfo
         const receiver = await User.findById(req.params.receiverId)
-        const sender = await User.findById(req.body.senderId)
+        const sender = await User.findById(req.user._id)
+        req.body.senderId = req.user._id
         const newMessage = new Message(req.body)
         newMessage.receiverId = req.params.receiverId
         newMessage.receiverName =  receiver.username
@@ -29,7 +31,7 @@ router.post('/newMessage/:receiverId', bodyParser, async(req, res)=> {
 
 // Get all Messages from a user
 
-router.get('/:senderId/message', bodyParser, async(req, res)=> {
+router.get('/:senderId/message', bodyParser,authenticateToken,async(req, res)=> {
 try{
     const message = await Message.find({
         senderId: req.params.senderId
@@ -37,8 +39,8 @@ try{
     if(!message){
         res.status(404).json("Message not found")
     }
-    const filteredMessages = message.filter((element) => element.receiverId === req.body.userId);
-   if(filteredMessages.every((element) => element.receiverId === req.body.userId)){
+    const filteredMessages = message.filter((element) => element.receiverId == req.user._id);
+   if(filteredMessages.every((element) => element.receiverId == req.user._id)){
     const shownMessages = filteredMessages.map(({ senderName, receiverName,text,createdAt}) => ({ senderName, receiverName,text,createdAt }));
 
     res.status(200).json(shownMessages)
@@ -55,11 +57,11 @@ catch(error){
 
 // Get all Messages
 
-router.get('/allMessages/:recieverId', bodyParser, async(req, res)=> {
+router.get('/allMessages/:recieverId', bodyParser,authenticateToken,async(req, res)=> {
 try{
-    const userId = req.body.userId
+    const userId = req.user._id
     const recieverId = req.params.recieverId
-    if(userId === recieverId){
+    if(userId == recieverId){
         const messages = await Message.find({
             receiverId: recieverId
         })
@@ -79,18 +81,22 @@ catch(error){
 }})
 
 // Delete Message
-
-router.delete('/delete/:id',bodyParser, async(req,res)=>{
+router.delete('/delete/:id',bodyParser,authenticateToken, async(req,res)=>{
     try{
         const deletedMessage = await Message.findById(req.params.id)
         if(!deletedMessage){    
             res.status(404).json("Message not found")
         }
-        if(deletedMessage.receiverId === req.body.userId){ 
+        if(deletedMessage.receiverId == req.user._id || deletedMessage.senderId == req.user){ 
             await deletedMessage.deleteOne()
-            res.status(200).json("Message deleted successfully")
+            res.status(200).json({
+                data: "",
+                message: "Message deleted successfully",
+                code : 200,
+                status: "OK",
+            })
         }else{
-            res.status(403).json("")
+            res.status(403).json("You can only delete your messages")
         }
     }catch(error){
         console.log("MESSAGE DELETE ERROR", error)

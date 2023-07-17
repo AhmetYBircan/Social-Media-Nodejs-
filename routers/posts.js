@@ -2,13 +2,14 @@ const router = require('express').Router()
 const bodyParser = require('body-parser').json();
 const Post = require('../models/Post')
 const User = require('../models/user');
+const { authenticateToken } = require('../middlewares/authMiddleware')
 
 // Create Post
-
-router.post('/', bodyParser, async(req,res)=>{
+router.post('/', bodyParser,authenticateToken,async(req,res)=>{
+    req.body.userId = req.user._id
     const newPost = new Post(req.body)
     try{
-        userCheck = await User.findById(req.body.userId)
+        userCheck = await User.findById(req.user._id)
         if(!userCheck){
             return res.status(404).json("User that not exist can't create post")
         }
@@ -21,12 +22,13 @@ router.post('/', bodyParser, async(req,res)=>{
         res.status(500).json(error)
     }
 })
-// Update Post
 
-router.put('/:id', bodyParser, async(req,res)=>{
+// Update Post
+router.put('/:id', bodyParser,authenticateToken, async(req,res)=>{
     try{
         const oldPost = await Post.findById(req.params.id)
-        if(oldPost.userId === req.body.userId){
+        if(oldPost.userId == req.user._id || req.user.isAdmin){
+                req.body.userId = req.user._id
                 const updatedPost = await Post.updateOne({$set:req.body})
                 res.status(200).json("Post Updated Successfully")
         }
@@ -41,13 +43,13 @@ router.put('/:id', bodyParser, async(req,res)=>{
 })
 // Delete Post
 
-router.delete('/:id',bodyParser, async(req,res) => {
+router.delete('/:id',bodyParser,authenticateToken,async(req,res) => {
     try{
         const deletedPost = await Post.findById(req.params.id)
         if(!deletedPost){
             res.status(404).json("Post not found")
         }
-        if(deletedPost.userId === req.body.userId){
+        if(deletedPost.userId === req.user._id || req.user.isAdmin){
             await Post.findByIdAndDelete(req.params.id) 
             res.status(200).json("Post deleted successfully")
         }else{
@@ -60,18 +62,18 @@ router.delete('/:id',bodyParser, async(req,res) => {
     }
 })
 // Like Post
-router.put('/:id/like', bodyParser, async (req,res)=> {
+router.put('/:id/like', bodyParser,authenticateToken,async (req,res)=> {
     try{
         const post = await Post.findById(req.params.id)
         if(!post){
             res.status(404).json("Post not found")
         }
-        if(!post.likes.includes(req.body.userId)){
-            await post.updateOne({$push:{likes:req.body.userId}})
+        if(!post.likes.includes(req.user._id)){
+            await post.updateOne({$push:{likes:req.user._id}})
             res.status(200).json("Post liked")
         }
         else {
-            await post.updateOne({$pull:{likes:req.body.userId}})
+            await post.updateOne({$pull:{likes:req.user._id}})
             res.status(200).json("Post disliked")
         }
     }
@@ -81,7 +83,7 @@ router.put('/:id/like', bodyParser, async (req,res)=> {
     }
 })
 // Get a Post
-    router.get('/:id', bodyParser, async(req,res)=>{
+    router.get('/:id',bodyParser,authenticateToken,async(req,res)=>{
         try{
             const post = await Post.findById(req.params.id)
             if(!post){
@@ -96,10 +98,9 @@ router.put('/:id/like', bodyParser, async (req,res)=> {
     })
 
 // Get Timeline Posts
-
-router.get('/timeline/all', bodyParser, async(req,res)=>{
+router.get('/timeline/all', bodyParser,authenticateToken,async(req,res)=>{
     try{
-        const currentUser = await User.findById(req.body.userId)
+        const currentUser = await User.findById(req.user._id)
         const usersPosts = await Post.find({userId:currentUser.id})
         const friendsPosts = await Promise.all(
             currentUser.followings.map((friendId)=>{
