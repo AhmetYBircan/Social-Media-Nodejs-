@@ -21,22 +21,46 @@ router.put('/:id', bodyParser,authenticateToken, async (req,res) => {
             }
             catch(error){
                 console.log("PASSWORD UPDATE ERROR", error)
-                return res.status(500).json(error)
+                return res.status(500).json({
+                    data: "",
+                    message: "Error when update the password",
+                    code : 500,
+                    status: "INTERNAL SERVER ERROR",
+                    error: error
+                })
             }
         }
         try {
             const user = await User.findByIdAndUpdate(req.params.id, {
                 $set: req.body
             })
-            res.status(200).json("Informations updated successfully")
+            res.status(200).json({
+                    data: user,
+                    message: "User updated successfully",
+                    code : 200,
+                    status: "OK",
+                })
         }
         catch(error){
             console.log("USER UPDATE ERROR", error)
-            res.status(500).json(error)
+            res.status(500).json({
+                data: "",
+                message: "Error when update the user",
+                code : 500,
+                status: "INTERNAL SERVER ERROR",
+                error: error
+            })
         }
     }
     else{
-        return res.status(403).json(" You can only update your account")
+        return res.status(403).json(
+            {
+                data: "",
+                message: "You can only update your account",
+                code : 403,
+                status: "FORBIDDEN",
+            }
+        )
     }
 } )
 // Delete User
@@ -44,15 +68,35 @@ router.delete('/:id', bodyParser,authenticateToken,async (req,res) => {
     if(req.user._id == req.params.id || req.user.isAdmin){
         try {
             const user = await User.findByIdAndDelete(req.params.id)
-            res.status(200).json("Account deleted successfully")
+            res.status(200).json(
+                {
+                    data: "",
+                    message: "User deleted successfully",
+                    code : 200,
+                    status: "OK",
+                }
+            )
         }
         catch(error){
             console.log("USER DELETE ERROR", error)
-            res.status(500).json(error)
+            res.status(500).json({
+                data: "",
+                message: "Error when delete the user",
+                code : 500,
+                status: "INTERNAL SERVER ERROR",
+                error: error
+            })
         }
     }
     else{
-        return res.status(403).json(" You can only delete your account")
+        return res.status(403).json(
+            {
+                data: "",
+                message: "You can only delete your account",
+                code : 403,
+                status: "FORBIDDEN",
+            }
+        )
     }
 } )
 
@@ -62,13 +106,30 @@ router.get('/:id', bodyParser,authenticateToken,async(req,res) => {
         const user = await User.findById(req.params.id)
         const {password, updatedAt,isAdmin, ...other} = user._doc
         if(!user){
-            res.status(404).json(" User not found")
+            res.status(404).json( {
+                data: "",
+                message: "User not found",
+                code : 404,
+                status: "NOT FOUND",
+            }
+            )
         }
-        res.status(200).json(other) 
+        res.status(200).json({
+            data: other,
+            message: "User get successfully",
+            code : 200,
+            status: "OK",
+        } )
     } 
     catch(error){
         console.log("USER GET ERROR", error)
-        res.status(500).json(error)
+        res.status(500).json({
+            data: "",
+            message: "Error when get the user",
+            code : 500,
+            status: "INTERNAL SERVER ERROR",
+            error: error
+        })
     }
 })
 
@@ -82,17 +143,42 @@ router.put('/:id/follow', bodyParser,authenticateToken,async(req,res)=> {
                 await user.updateOne({$push:{followers:req.user._id}})
                 await currentUser.updateOne({$push:{followings:req.params.id}})
             }else{
-                res.status(403).json("This account is already followed")
+                res.status(403).json(
+                    {
+                        data: "",
+                        message: "You already follow this account",
+                        code : 403,
+                        status: "FORBIDDEN",
+                    }
+                )
             }
-        res.status(200).json(user.username +" has been followed successfully")
+        res.status(200).json({
+        data: user.username +" has been followed successfully",
+        message: "User followed successfully",
+        code : 200,
+        status: "OK",
+        })
         }
         catch(error){
             console.log("USER FOLLOW ERROR", error)
-            res.status(500).json(error)
+            res.status(500).json({
+                data: "",
+                message: "Error when follow the user",
+                code : 500,
+                status: "INTERNAL SERVER ERROR",
+                error: error
+            })
         }
     } 
     else{ 
-        res.status(403).json("You can't follow yourself")
+        res.status(403).json(
+            {
+                data: "",
+                message: "You can't follow yourself",
+                code : 403,
+                status: "FORBIDDEN",
+            }
+        )
     }
 } ) 
 // Unfollow a User
@@ -105,17 +191,43 @@ router.put('/:id/unfollow', bodyParser,authenticateToken,async(req,res)=> {
                 await user.updateOne({$pull:{followers:req.user._id}})
                 await currentUser.updateOne({$pull:{followings:req.params.id}})
             }else{
-                res.status(403).json("This account is not followed") 
+                res.status(403).json(
+                    {
+                        data: "",
+                        message: "This account is not followed already",
+                        code : 403,
+                        status: "FORBIDDEN",
+                    }
+                ) 
             }
-        res.status(200).json(user.username +" has been unfollowed successfully")
+        res.status(200).json(
+        {
+            data: user.username +" has been unfollowed successfully",
+            message: "User followed successfully",
+            code : 200,
+            status: "OK",
+        })
         }
         catch(error){
             console.log("USER UNFOLLOW ERROR", error) 
-            res.status(500).json(error)
+            res.status(500).json({
+                data: "",
+                message: "Error when unfollow the user",
+                code : 500,
+                status: "INTERNAL SERVER ERROR",
+                error: error
+            })
         }
     }
     else{
-        res.status(403).json("You can't unfollow yourself")
+        res.status(403).json(
+            {
+                data: "",
+                message: "You can't unfollow yourself",
+                code : 403,
+                status: "FORBIDDEN",
+            }
+        )
     }
 } )
 
@@ -128,12 +240,25 @@ router.put('/:id/unfollow', bodyParser,authenticateToken,async(req,res)=> {
                 follower = await User.findById(user.followers[i])
                 followersUsernames.push(follower.username)
             }
-            res.status(200).json("Followers of "+ user.username+ " :"+ followersUsernames)
+            res.status(200).json(
+            {
+                data: "Followers of "+ user.username+ " :"+ followersUsernames,
+                message: " Followers getted successfully",
+                code : 200,
+                status: "OK",
+            }
+            )
             
         }
         catch(error){
             console.log("GET FOLLOWERS ERROR", error)
-            res.status(500).json(error)
+            res.status(500).json({
+                data: "",
+                message: "Error when get the followers",
+                code : 500,
+                status: "INTERNAL SERVER ERROR",
+                error: error
+            })
         }
     })
 // Get Followings
@@ -145,12 +270,24 @@ router.put('/:id/unfollow', bodyParser,authenticateToken,async(req,res)=> {
                 followings = await User.findById(user.followings[i])
                 followingsUsernames.push(followings.username)
             }
-            res.status(200).json("Followings of "+user.username +" :"+ followingsUsernames)
+            res.status(200).json(
+            {
+                data: "Followings of "+user.username +" :"+ followingsUsernames,
+                message: "Followings getted successfully",
+                code : 200,
+                status: "OK",
+            })
             
         }
         catch(error){
             console.log("GET FOLLOWERS ERROR", error)
-            res.status(500).json(error)
+            res.status(500).json({
+                data: "",
+                message: "Error when get the followings",
+                code : 500,
+                status: "INTERNAL SERVER ERROR",
+                error: error
+            })
         }
     })
 
@@ -160,18 +297,36 @@ router.put('/:id/unfollow', bodyParser,authenticateToken,async(req,res)=> {
         console.log("req.params.username=>", req.params.username)
         const profileUser = await User.findOne({username: req.params.username})
         if(!profileUser){
-            res.status(404).json("User not found")
+            res.status(404).json(
+                {
+                    data: "",
+                    message: "User not found",
+                    code : 404,
+                    status: "NOT FOUND",
+                }
+            )
         }
         const {password, updatedAt,isAdmin,__v, ...other} = profileUser._doc
         console.log("other=>", other)
         const userPosts = await Post.find({userId: profileUser._id})
 
             let {_id,userId, ...otherPosts} = userPosts  
-        res.status(200).json(other + otherPosts)
+        res.status(200).json({
+                    data: other + otherPosts,
+                    message: "Profile getted successfully",
+                    code : 200,
+                    status: "OK",
+                })
     }
     catch(error){
         console.log("GET PROFILE ERROR", error)
-        res.status(500).json(error)
+        res.status(500).json({
+            data: "",
+            message: "Error when get the profile",
+            code : 500,
+            status: "INTERNAL SERVER ERROR",
+            error: error
+        })
     } 
     })
 module.exports = router 

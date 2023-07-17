@@ -21,11 +21,26 @@ router.post('/newMessage/:receiverId', bodyParser,authenticateToken, async(req, 
             senderName: savedMessage.senderName,
             text: savedMessage.text
         }
-        res.status(200).json(shownMessage)
+        res.status(200).json(
+            {
+                data: shownMessage,
+                message: "Message send successfully",
+                code : 200,
+                status: "OK",
+            }
+        )
     }
     catch(error){
         console.log("MESSAGE SEND ERROR", error)
-        res.status(500).json(error)
+        res.status(500).json(
+            {
+                data: "",
+                message: "Error when send messages",
+                code : 500,
+                status: "INTERNAL SERVER ERROR",
+                error: error
+            }
+        )
     }
 })
 
@@ -37,21 +52,50 @@ try{
         senderId: req.params.senderId
     })
     if(!message){
-        res.status(404).json("Message not found")
+        res.status(404).json(
+            {
+                data: "",
+                message: "Message not found",
+                code : 404,
+                status: "NOT FOUND",
+            }
+        )
     }
     const filteredMessages = message.filter((element) => element.receiverId == req.user._id);
    if(filteredMessages.every((element) => element.receiverId == req.user._id)){
     const shownMessages = filteredMessages.map(({ senderName, receiverName,text,createdAt}) => ({ senderName, receiverName,text,createdAt }));
 
-    res.status(200).json(shownMessages)
+    res.status(200).json(
+        {
+            data: shownMessages,
+            message: "All messages get successfully",
+            code : 200,
+            status: "OK",
+        }
+    )
    }  
     else{
-        res.status(403).json("You can only see your messages")
+        res.status(403).json(
+            {
+                data: "",
+                message: "You can only see your messages",
+                code : 403,
+                status: "FORBIDDEN",
+            }
+        )
     }
 }
 catch(error){
     console.log("MESSAGE GET ERROR", error)
-    res.status(500).json(error)
+    res.status(500).json(
+        {
+            data: "",
+            message: "Error when getting messages",
+            code : 500,
+            status: "INTERNAL SERVER ERROR",
+            error: error
+        }
+    )
 }
 })
 
@@ -66,18 +110,47 @@ try{
             receiverId: recieverId
         })
         if(!messages){
-            res.status(404).json("Message not found")
+            res.status(404).json(
+                {
+                    data: "",
+                    message: "Message not found",
+                    code : 404,
+                    status: "NOT FOUND",
+                }
+            )
         }
         const shownMessages = messages.map(({ senderName, receiverName,text,createdAt}) => ({ senderName, receiverName,text,createdAt }));
 
-        res.status(200).json(shownMessages)
+        res.status(200).json(       
+            {
+                data: shownMessages,
+                message: "All messages get successfully",
+                code : 200,
+                status: "OK",
+            }
+            )
     }else {
-        res.status(403).json("You can only see your messages")
+        res.status(403).json(
+            {
+                data: "",
+                message: "You can only see your messages",
+                code : 403,
+                status: "FORBIDDEN",
+            }
+        )
     }
 }
 catch(error){
     console.log("ALL MESSAGE GET ERROR", error)
-    res.status(500).json(error)
+    res.status(500).json(
+        {
+            data: "",
+            message: "Error when get all message",
+            code : 500,
+            status: "INTERNAL SERVER ERROR",
+            error: error
+        }
+    )
 }})
 
 // Delete Message
@@ -96,11 +169,22 @@ router.delete('/delete/:id',bodyParser,authenticateToken, async(req,res)=>{
                 status: "OK",
             })
         }else{
-            res.status(403).json("You can only delete your messages")
+            res.status(403).json({
+                data: "",
+                message: "You can only delete your messages",
+                code : 403,
+                status: "FORBIDDEN",
+            })
         }
     }catch(error){
         console.log("MESSAGE DELETE ERROR", error)
-        res.status(500).json(error)
+        res.status(500).json({
+            data: "",
+            message: "Error when deleting message",
+            code : 500,
+            status: "INTERNAL SERVER ERROR",
+            error: error
+        })
     }
 })
 module.exports = router
