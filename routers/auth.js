@@ -4,6 +4,10 @@ const bodyParser = require('body-parser').json();
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const authMiddleware = require('../middlewares/authMiddleware')
+const mailFunction  = require('../mailer')
+const generateMailHtml = require('../mailHtml')
+
+
 // REGISTER
 router.post('/register',bodyParser,async (req,res)=> {
 
@@ -31,6 +35,21 @@ router.post('/register',bodyParser,async (req,res)=> {
         })
         // Save user and response
         const user = await newUser.save()
+
+        // SEND MAIL
+        const MailInfo = {
+            userName: req.body.username,
+            title: "Welcome to Social",
+            mailText: "Welcome to Social App. Lets share your ideas with other people!"
+        }
+        const mailContent = {
+            from: '"Welcome 👻!" <socail@mail.com>',
+            to: req.body.email,
+            subject: "Welcome to Social", 
+            text: ` `,
+            html: generateMailHtml(MailInfo)
+        } 
+        mailFunction(mailContent)
         res.status(200).json(
             {
                 data: user,

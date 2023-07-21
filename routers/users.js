@@ -4,6 +4,9 @@ const router = require('express').Router()
 const bodyParser = require('body-parser').json();
 const Post = require('../models/Post')
 const { authenticateToken } = require('../middlewares/authMiddleware')
+const mailFunction  = require('../mailer')
+const generateMailHtml = require('../mailHtml')
+
 
 
 router.get('/',(req,res)=>{
@@ -34,6 +37,19 @@ router.put('/:id', bodyParser,authenticateToken, async (req,res) => {
             const user = await User.findByIdAndUpdate(req.params.id, {
                 $set: req.body
             })
+            const MailInfo = {
+                userName: user.username,
+                title: "Account Update",
+                mailText: `Your account has been updated successfully!`
+            }
+            const mailContent = {
+                from: '"Social App" <socail@mail.com>',
+                to: user.email,
+                subject: "Account Update",
+                text: "Your account has been updated successfully",
+                html: generateMailHtml(MailInfo)
+            }
+            mailFunction(mailContent)
             res.status(200).json({
                     data: user,
                     message: "User updated successfully",
@@ -68,6 +84,19 @@ router.delete('/:id', bodyParser,authenticateToken,async (req,res) => {
     if(req.user._id == req.params.id || req.user.isAdmin){
         try {
             const user = await User.findByIdAndDelete(req.params.id)
+            const MailInfo = {
+                userName: user.username,
+                title: "Account Deleted",
+                mailText: `Your account has been deleted successfully!`
+            }
+            const mailContent = {
+                from: '"Social App" <socail@mail.com>',
+                to: user.email,
+                subject: "Account Delete",
+                text: `${user.username}  has been deleted successfully`,
+                html: generateMailHtml(MailInfo)
+            }
+            mailFunction(mailContent)
             res.status(200).json(
                 {
                     data: "",
