@@ -5,7 +5,7 @@ Auth system for login and other endpoints with JWT
 Passwords hashed with bcrypt
 Mailing structure for registration, update user, delete user with nodemailer
 
-Posting a image feature will added soon
+Posting a image feature and frontend development will added soon
 
 For now, you can easly run the project with command "npm start" after the adding your .env file and package.json
 When all process done, env and package.json will added
